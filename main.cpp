@@ -11,7 +11,7 @@ const int WINDOW_HEIGHT = 600;
 const int ROWS = 10;
 const int COLS = 10;
 const int MINE_COUNT = 15;
-const int TIME_LIMIT = 60; // YENİ: Oyuncunun saniye cinsinden süresi
+const int TIME_LIMIT = 60; // 60 saniye süre
 
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
@@ -28,7 +28,11 @@ struct Cell {
 
 std::vector<std::vector<Cell>> board;
 TTF_Font* mainFont = nullptr;
-Uint64 startTime = 0; // YENİ: Süreyi takip edeceğimiz değişken
+Uint64 startTime = 0;
+
+// Resim (Texture) Değişkenleri
+SDL_Texture* flagTexture = nullptr;
+SDL_Texture* mineTexture = nullptr;
 
 // --- FONKSİYONLAR ---
 void initBoard() {
@@ -72,6 +76,18 @@ void drawText(SDL_Renderer* renderer, std::string text, float x, float y, SDL_Co
     SDL_DestroyTexture(tex);
 }
 
+// .bmp Resmi Yükleme Fonksiyonu
+SDL_Texture* loadBMPTexture(SDL_Renderer* renderer, const char* file) {
+    SDL_Surface* surface = SDL_LoadBMP(file);
+    if (!surface) {
+        std::cout << file << " bulunamadi! Resim yerine renk kullanilacak." << std::endl;
+        return nullptr;
+    }
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
+    return texture;
+}
+
 int main(int argc, char* argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) return -1;
     if (TTF_Init() == -1) return -1;
@@ -82,17 +98,20 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Mayin Tarlasi - Kerem", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
+    // Resimleri Belleğe Yükle
+    flagTexture = loadBMPTexture(renderer, "flag.bmp");
+    mineTexture = loadBMPTexture(renderer, "mine.bmp");
+
     SDL_FRect startButton = { 150, 450, 300, 60 };
     bool isRunning = true;
     SDL_Event event;
 
     while (isRunning) {
-        // YENİ: Süre Kontrolü
+        // Süre Kontrolü
         if (currentState == PLAYING) {
             int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
             if (TIME_LIMIT - elapsedSeconds <= 0) {
-                // Süre bittiyse oyunu kaybet
-                currentState = GAME_OVER;
+                currentState = GAME_OVER; // Süre bitti, oyun biter
                 for(int i=0; i<ROWS; i++) for(int j=0; j<COLS; j++) if(board[i][j].isMine) board[i][j].isRevealed = true;
             }
         }
@@ -106,7 +125,7 @@ int main(int argc, char* argv[]) {
                         event.button.y >= startButton.y && event.button.y <= startButton.y + startButton.h) {
                         initBoard();
                         currentState = PLAYING;
-                        startTime = SDL_GetTicks(); // YENİ: Oyuna başlarken kronometreyi sıfırla
+                        startTime = SDL_GetTicks();
                     }
                 } else if (currentState == PLAYING) {
                     int c = (int)(event.button.x / CELL_WIDTH);
@@ -134,10 +153,14 @@ int main(int argc, char* argv[]) {
             SDL_FRect r1 = {50, 100, 30, 30}; SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255); SDL_RenderFillRect(renderer, &r1);
             drawText(renderer, "Kapali Kutu", 100, 100, {255, 255, 255, 255});
 
-            SDL_FRect r2 = {50, 150, 30, 30}; SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255); SDL_RenderFillRect(renderer, &r2);
+            SDL_FRect r2 = {50, 150, 30, 30};
+            if (flagTexture) SDL_RenderTexture(renderer, flagTexture, nullptr, &r2);
+            else { SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255); SDL_RenderFillRect(renderer, &r2); }
             drawText(renderer, "Bayrak (Sag Tik)", 100, 150, {255, 255, 255, 255});
 
-            SDL_FRect r3 = {50, 200, 30, 30}; SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255); SDL_RenderFillRect(renderer, &r3);
+            SDL_FRect r3 = {50, 200, 30, 30};
+            if (mineTexture) SDL_RenderTexture(renderer, mineTexture, nullptr, &r3);
+            else { SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255); SDL_RenderFillRect(renderer, &r3); }
             drawText(renderer, "Mayin (Tehlike)", 100, 200, {255, 255, 255, 255});
 
             SDL_SetRenderDrawColor(renderer, 0, 180, 0, 255);
@@ -149,8 +172,10 @@ int main(int argc, char* argv[]) {
                 for (int c = 0; c < COLS; c++) {
                     SDL_FRect rect = { c * CELL_WIDTH + 1, r * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2 };
                     if (board[r][c].isRevealed) {
-                        if (board[r][c].isMine) SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255);
-                        else {
+                        if (board[r][c].isMine) {
+                            if (mineTexture) SDL_RenderTexture(renderer, mineTexture, nullptr, &rect);
+                            else { SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255); SDL_RenderFillRect(renderer, &rect); }
+                        } else {
                             SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
                             SDL_RenderFillRect(renderer, &rect);
                             if (board[r][c].neighborMines > 0)
@@ -159,30 +184,33 @@ int main(int argc, char* argv[]) {
                         }
                     } else {
                         SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255);
-                        if (board[r][c].isFlagged) SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255);
+                        SDL_RenderFillRect(renderer, &rect);
+                        if (board[r][c].isFlagged) {
+                            if (flagTexture) SDL_RenderTexture(renderer, flagTexture, nullptr, &rect);
+                            else { SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255); SDL_RenderFillRect(renderer, &rect); }
+                        }
                     }
-                    SDL_RenderFillRect(renderer, &rect);
                 }
             }
 
-            // YENİ: Süreyi Ekrana Çizdirme (Izgaranın üstünde kalacak şekilde en sona yazıyoruz)
+            // Süreyi Ekrana Çizdirme
             if (currentState == PLAYING) {
                 int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
                 int remainingSeconds = TIME_LIMIT - elapsedSeconds;
-
-                // Arka planı koyu gri bir kutu yapalım ki ızgaranın üzerinde belli olsun
                 SDL_FRect timeBg = {5, 5, 120, 35};
                 SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
                 SDL_RenderFillRect(renderer, &timeBg);
-
-                // Süreyi Sarı renk ile yazdırıyoruz
                 drawText(renderer, "Sure: " + std::to_string(remainingSeconds), 10, 10, {255, 255, 0, 255});
             }
 
-            if (currentState == GAME_OVER) drawText(renderer, "GUM! MENÜ ICIN TIKLA", 150, 280, {255, 0, 0, 255});
+            if (currentState == GAME_OVER) drawText(renderer, "GUM! MENU ICIN TIKLA", 150, 280, {255, 0, 0, 255});
         }
         SDL_RenderPresent(renderer);
     }
+
+    // Belleği Temizle
+    if (flagTexture) SDL_DestroyTexture(flagTexture);
+    if (mineTexture) SDL_DestroyTexture(mineTexture);
 
     TTF_CloseFont(mainFont);
     TTF_Quit();
