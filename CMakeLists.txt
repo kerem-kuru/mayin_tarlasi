@@ -8,8 +8,8 @@ include_directories("${CMAKE_SOURCE_DIR}/external/include")
 link_directories("${CMAKE_SOURCE_DIR}/external/lib")
 
 # 2. Çalıştırılabilir dosyayı oluştur (main.cpp'den)
-add_executable(${PROJECT_NAME} main.cpp)
 
+add_executable(${PROJECT_NAME} main.cpp resource.rc)
 # 3. Kütüphaneleri projeye bağla
 target_link_libraries(${PROJECT_NAME} SDL3 SDL3_ttf)
 
