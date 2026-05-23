@@ -11,6 +11,7 @@ const int WINDOW_HEIGHT = 600;
 const int ROWS = 10;
 const int COLS = 10;
 const int MINE_COUNT = 15;
+const int TIME_LIMIT = 60; // YENİ: Oyuncunun saniye cinsinden süresi
 
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
@@ -27,6 +28,7 @@ struct Cell {
 
 std::vector<std::vector<Cell>> board;
 TTF_Font* mainFont = nullptr;
+Uint64 startTime = 0; // YENİ: Süreyi takip edeceğimiz değişken
 
 // --- FONKSİYONLAR ---
 void initBoard() {
@@ -85,6 +87,16 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
 
     while (isRunning) {
+        // YENİ: Süre Kontrolü
+        if (currentState == PLAYING) {
+            int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
+            if (TIME_LIMIT - elapsedSeconds <= 0) {
+                // Süre bittiyse oyunu kaybet
+                currentState = GAME_OVER;
+                for(int i=0; i<ROWS; i++) for(int j=0; j<COLS; j++) if(board[i][j].isMine) board[i][j].isRevealed = true;
+            }
+        }
+
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) isRunning = false;
 
@@ -94,6 +106,7 @@ int main(int argc, char* argv[]) {
                         event.button.y >= startButton.y && event.button.y <= startButton.y + startButton.h) {
                         initBoard();
                         currentState = PLAYING;
+                        startTime = SDL_GetTicks(); // YENİ: Oyuna başlarken kronometreyi sıfırla
                     }
                 } else if (currentState == PLAYING) {
                     int c = (int)(event.button.x / CELL_WIDTH);
@@ -116,7 +129,6 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
 
         if (currentState == MENU) {
-            // YENİ: Detaylı Rehber ve UI Geliştirmeleri
             drawText(renderer, "MAYIN TARLASI - REHBER", 150, 30, {255, 255, 255, 255});
 
             SDL_FRect r1 = {50, 100, 30, 30}; SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255); SDL_RenderFillRect(renderer, &r1);
@@ -152,6 +164,21 @@ int main(int argc, char* argv[]) {
                     SDL_RenderFillRect(renderer, &rect);
                 }
             }
+
+            // YENİ: Süreyi Ekrana Çizdirme (Izgaranın üstünde kalacak şekilde en sona yazıyoruz)
+            if (currentState == PLAYING) {
+                int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
+                int remainingSeconds = TIME_LIMIT - elapsedSeconds;
+
+                // Arka planı koyu gri bir kutu yapalım ki ızgaranın üzerinde belli olsun
+                SDL_FRect timeBg = {5, 5, 120, 35};
+                SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
+                SDL_RenderFillRect(renderer, &timeBg);
+
+                // Süreyi Sarı renk ile yazdırıyoruz
+                drawText(renderer, "Sure: " + std::to_string(remainingSeconds), 10, 10, {255, 255, 0, 255});
+            }
+
             if (currentState == GAME_OVER) drawText(renderer, "GUM! MENÜ ICIN TIKLA", 150, 280, {255, 0, 0, 255});
         }
         SDL_RenderPresent(renderer);
