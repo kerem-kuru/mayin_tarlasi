@@ -15,7 +15,6 @@ const int MINE_COUNT = 15;
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
 
-// YENİ: Oyun Durumları Eklendi
 enum GameState { MENU, PLAYING, GAME_OVER };
 GameState currentState = MENU;
 
@@ -81,7 +80,6 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Mayin Tarlasi - Kerem", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
-    // YENİ: Başlat Butonu
     SDL_FRect startButton = { 150, 450, 300, 60 };
     bool isRunning = true;
     SDL_Event event;
@@ -90,7 +88,6 @@ int main(int argc, char* argv[]) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) isRunning = false;
 
-            // YENİ: Durumlara Göre Tıklama Mantığı
             if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
                 if (currentState == MENU) {
                     if (event.button.x >= startButton.x && event.button.x <= startButton.x + startButton.w &&
@@ -110,7 +107,7 @@ int main(int argc, char* argv[]) {
                         board[r][c].isFlagged = !board[r][c].isFlagged;
                     }
                 } else if (currentState == GAME_OVER) {
-                    currentState = MENU; // Ekrana tıklayınca menüye dön
+                    currentState = MENU;
                 }
             }
         }
@@ -118,20 +115,30 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 20, 20, 20, 255);
         SDL_RenderClear(renderer);
 
-        // YENİ: Durumlara Göre Çizim
         if (currentState == MENU) {
-            drawText(renderer, "MAYIN TARLASI", 210, 100, {255, 255, 255, 255});
+            // YENİ: Detaylı Rehber ve UI Geliştirmeleri
+            drawText(renderer, "MAYIN TARLASI - REHBER", 150, 30, {255, 255, 255, 255});
+
+            SDL_FRect r1 = {50, 100, 30, 30}; SDL_SetRenderDrawColor(renderer, 70, 70, 70, 255); SDL_RenderFillRect(renderer, &r1);
+            drawText(renderer, "Kapali Kutu", 100, 100, {255, 255, 255, 255});
+
+            SDL_FRect r2 = {50, 150, 30, 30}; SDL_SetRenderDrawColor(renderer, 255, 140, 0, 255); SDL_RenderFillRect(renderer, &r2);
+            drawText(renderer, "Bayrak (Sag Tik)", 100, 150, {255, 255, 255, 255});
+
+            SDL_FRect r3 = {50, 200, 30, 30}; SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255); SDL_RenderFillRect(renderer, &r3);
+            drawText(renderer, "Mayin (Tehlike)", 100, 200, {255, 255, 255, 255});
+
             SDL_SetRenderDrawColor(renderer, 0, 180, 0, 255);
             SDL_RenderFillRect(renderer, &startButton);
             drawText(renderer, "OYUNU BASLAT", startButton.x + 55, startButton.y + 15, {255, 255, 255, 255});
+
         } else {
             for (int r = 0; r < ROWS; r++) {
                 for (int c = 0; c < COLS; c++) {
                     SDL_FRect rect = { c * CELL_WIDTH + 1, r * CELL_HEIGHT + 1, CELL_WIDTH - 2, CELL_HEIGHT - 2 };
                     if (board[r][c].isRevealed) {
-                        if (board[r][c].isMine) {
-                            SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255);
-                        } else {
+                        if (board[r][c].isMine) SDL_SetRenderDrawColor(renderer, 220, 50, 50, 255);
+                        else {
                             SDL_SetRenderDrawColor(renderer, 180, 180, 180, 255);
                             SDL_RenderFillRect(renderer, &rect);
                             if (board[r][c].neighborMines > 0)
@@ -145,9 +152,7 @@ int main(int argc, char* argv[]) {
                     SDL_RenderFillRect(renderer, &rect);
                 }
             }
-            if (currentState == GAME_OVER) {
-                drawText(renderer, "GUM! MENÜ ICIN TIKLA", 150, 280, {255, 0, 0, 255});
-            }
+            if (currentState == GAME_OVER) drawText(renderer, "GUM! MENÜ ICIN TIKLA", 150, 280, {255, 0, 0, 255});
         }
         SDL_RenderPresent(renderer);
     }
