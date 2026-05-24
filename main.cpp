@@ -16,7 +16,8 @@ const int TIME_LIMIT = 60; // 60 saniye süre
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
 
-enum GameState { MENU, PLAYING, GAME_OVER };
+// YENİ: GAME_WIN durumu eklendi
+enum GameState { MENU, PLAYING, GAME_OVER, GAME_WIN };
 GameState currentState = MENU;
 
 struct Cell {
@@ -98,7 +99,6 @@ int main(int argc, char* argv[]) {
     SDL_Window* window = SDL_CreateWindow("Mayin Tarlasi - Kerem", WINDOW_WIDTH, WINDOW_HEIGHT, 0);
     SDL_Renderer* renderer = SDL_CreateRenderer(window, nullptr);
 
-    // Resimleri Belleğe Yükle
     flagTexture = loadBMPTexture(renderer, "flag.bmp");
     mineTexture = loadBMPTexture(renderer, "mine.bmp");
 
@@ -107,11 +107,10 @@ int main(int argc, char* argv[]) {
     SDL_Event event;
 
     while (isRunning) {
-        // Süre Kontrolü
         if (currentState == PLAYING) {
             int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
             if (TIME_LIMIT - elapsedSeconds <= 0) {
-                currentState = GAME_OVER; // Süre bitti, oyun biter
+                currentState = GAME_OVER;
                 for(int i=0; i<ROWS; i++) for(int j=0; j<COLS; j++) if(board[i][j].isMine) board[i][j].isRevealed = true;
             }
         }
@@ -130,15 +129,31 @@ int main(int argc, char* argv[]) {
                 } else if (currentState == PLAYING) {
                     int c = (int)(event.button.x / CELL_WIDTH);
                     int r = (int)(event.button.y / CELL_HEIGHT);
+
                     if (event.button.button == SDL_BUTTON_LEFT) {
                         if (board[r][c].isMine) {
                             currentState = GAME_OVER;
                             for(int i=0; i<ROWS; i++) for(int j=0; j<COLS; j++) if(board[i][j].isMine) board[i][j].isRevealed = true;
-                        } else revealCell(r, c);
+                        } else {
+                            revealCell(r, c);
+
+                            // (Win Condition)
+                            int revealedSafeCells = 0;
+                            for(int i=0; i<ROWS; i++) {
+                                for(int j=0; j<COLS; j++) {
+                                    if(board[i][j].isRevealed && !board[i][j].isMine) revealedSafeCells++;
+                                }
+                            }
+                            // Toplam güvenli hücre sayısına ulaşıldıysa kazan
+                            if (revealedSafeCells == (ROWS * COLS) - MINE_COUNT) {
+                                currentState = GAME_WIN;
+                            }
+                        }
                     } else if (event.button.button == SDL_BUTTON_RIGHT) {
                         board[r][c].isFlagged = !board[r][c].isFlagged;
                     }
-                } else if (currentState == GAME_OVER) {
+                // YENİ: Kazandıktan veya kaybettikten sonra tıklanınca menüye dön
+                } else if (currentState == GAME_OVER || currentState == GAME_WIN) {
                     currentState = MENU;
                 }
             }
@@ -193,7 +208,6 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            // Süreyi Ekrana Çizdirme
             if (currentState == PLAYING) {
                 int elapsedSeconds = (SDL_GetTicks() - startTime) / 1000;
                 int remainingSeconds = TIME_LIMIT - elapsedSeconds;
@@ -203,12 +217,21 @@ int main(int argc, char* argv[]) {
                 drawText(renderer, "Sure: " + std::to_string(remainingSeconds), 10, 10, {255, 255, 0, 255});
             }
 
-            if (currentState == GAME_OVER) drawText(renderer, "GUM! MENU ICIN TIKLA", 150, 280, {255, 0, 0, 255});
+            // YENİ: Oyun sonu mesajları (Kaybetme ve Kazanma)
+            if (currentState == GAME_OVER) {
+                drawText(renderer, "GUM! MENU ICIN TIKLA", 150, 280, {255, 0, 0, 255});
+            } else if (currentState == GAME_WIN) {
+                // Arka plana ufak koyu bir kutu atalım ki yeşil yazı daha net okunsun
+                SDL_FRect winBg = {110, 275, 380, 40};
+                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
+                SDL_RenderFillRect(renderer, &winBg);
+
+                drawText(renderer, "TEBRIKLER KAZANDIN! MENU ICIN TIKLA", 115, 280, {0, 255, 0, 255});
+            }
         }
         SDL_RenderPresent(renderer);
     }
 
-    // Belleği Temizle
     if (flagTexture) SDL_DestroyTexture(flagTexture);
     if (mineTexture) SDL_DestroyTexture(mineTexture);
 
