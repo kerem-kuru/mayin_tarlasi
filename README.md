@@ -17,6 +17,9 @@
 ---
 
 ## 🎮 Proje Hakkında
+Bu proje, **Kocaeli Üniversitesi Programlama 2 dersi dönem projesi** kapsamında geliştirilmiştir. 
+
+Klasik Mayın Tarlası (Minesweeper) oyununun **C++17** ve modern **SDL3** grafik motoru kullanılarak sıfırdan tasarlanmış, performans odaklı bir versiyonudur. Proje, sadece bir oyun olmakla kalmayıp; C++ ile bellek yönetimi, CMake ile taşınabilir derleme sistemleri (build systems) ve harici kütüphane entegrasyonu konularında akademik beklentileri karşılayacak standartlarda hazırlanmıştır.
 Bu proje, klasik Mayın Tarlası oyununun **C++17** ve modern **SDL3** grafik motoru kullanılarak sıfırdan geliştirilmiş, performans odaklı bir versiyonudur. Proje, sadece bir oyun olmakla kalmayıp; C++ ile bellek yönetimi, CMake ile derleme sistemleri (build systems) ve harici kütüphane (external library) entegrasyonu konularında best-practice'leri göstermek amacıyla tasarlanmıştır.
 
 ## ✨ Oyun Mekanikleri ve Özellikler
@@ -44,7 +47,7 @@ Bu proje, klasik Mayın Tarlası oyununun **C++17** ve modern **SDL3** grafik mo
 ### 💻 Yöntem 2: Geliştiriciler İçin (Kaynak Koddan Derleme)
 1. Repoyu bilgisayarınıza klonlayın:
 ```bash
-   git clone [https://github.com/KULLANICI_ADIN/mayin_tarlasi.git](https://github.com/KULLANICI_ADIN/mayin_tarlasi.git)
+   git clone https://github.com/kerem-kuru/mayin_tarlasi.git
 ```
 
 2. **CLion**, **Visual Studio** veya CMake destekli herhangi bir IDE ile projeyi açın.
