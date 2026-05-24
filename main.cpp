@@ -11,7 +11,7 @@ const int WINDOW_HEIGHT = 600;
 const int ROWS = 10;
 const int COLS = 10;
 const int MINE_COUNT = 15;
-const int TIME_LIMIT = 1000; // 60 saniye süre
+const int TIME_LIMIT = 60; // 60 saniye süre
 
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
