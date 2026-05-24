@@ -11,7 +11,7 @@ const int WINDOW_HEIGHT = 600;
 const int ROWS = 10;
 const int COLS = 10;
 const int MINE_COUNT = 15;
-const int TIME_LIMIT = 60; // 60 saniye süre
+const int TIME_LIMIT = 1000; // 60 saniye süre
 
 const float CELL_WIDTH = (float)WINDOW_WIDTH / COLS;
 const float CELL_HEIGHT = (float)WINDOW_HEIGHT / ROWS;
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 200);
                 SDL_RenderFillRect(renderer, &winBg);
 
-                drawText(renderer, "TEBRIKLER KAZANDIN! MENU ICIN TIKLA", 115, 280, {0, 255, 0, 255});
+                drawText(renderer, "TEBRIKLER KAZANDIN!", 115, 280, {0, 255, 0, 255});
             }
         }
         SDL_RenderPresent(renderer);
